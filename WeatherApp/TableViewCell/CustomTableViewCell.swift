@@ -24,11 +24,16 @@ class CustomTableViewCell: UITableViewCell {
     
     override func awakeFromNib() {
         super.awakeFromNib()
+        let timeinterval : TimeInterval = (WeatherData.shared.date.last! as NSString).doubleValue
+        let dateFormater : DateFormatter = DateFormatter()
+            dateFormater.dateFormat = "dd-MMM-yyyy hh:mm a"
+            print(dateFormater.string(from: NSDate(timeIntervalSince1970:timeinterval) as Date))
         cityLabel.text = WeatherData.shared.city.last
         temperatureLabel.text = String(WeatherData.shared.temp.last ?? 0)
         humidityLabel.text = String(WeatherData.shared.humidity.last ?? 0)
         windLabel.text = String(WeatherData.shared.wind.last ?? 0)
         weatherPicture.image = UIImage(named: WeatherData.shared.updateWeatherIcon(condition: WeatherData.shared.condition.last ?? 0))
+        dateLabel.text = dateFormater.string(from: NSDate(timeIntervalSince1970:timeinterval) as Date)
     }
 
    
