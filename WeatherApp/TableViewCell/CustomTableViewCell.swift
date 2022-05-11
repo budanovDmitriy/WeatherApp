@@ -28,6 +28,7 @@ class CustomTableViewCell: UITableViewCell {
         temperatureLabel.text = String(WeatherData.shared.temp.last ?? 0)
         humidityLabel.text = String(WeatherData.shared.humidity.last ?? 0)
         windLabel.text = String(WeatherData.shared.wind.last ?? 0)
+        weatherPicture.image = UIImage(named: WeatherData.shared.updateWeatherIcon(condition: WeatherData.shared.condition.last ?? 0))
     }
 
    
