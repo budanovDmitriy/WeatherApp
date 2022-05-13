@@ -14,7 +14,13 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate, Change
     
     let apiUrl = "https://api.openweathermap.org/data/2.5/weather"
     let apiId = "f511d11fc5aae90238f9686fd3f65ebf"
-   
+    var cityData = WeatherData.shared.city
+    var tempData = WeatherData.shared.temp
+    var humidityData = WeatherData.shared.humidity
+    var windData = WeatherData.shared.wind
+    var conditionData = WeatherData.shared.condition
+    var dateData = WeatherData.shared.date
+    
     @IBOutlet var tableView: UITableView!
     
     let loactionManager = CLLocationManager()
@@ -23,10 +29,15 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate, Change
         super.viewDidLoad()
         self.tableView.dataSource = self
         self.tableView.delegate = self
+        self.tableView.rowHeight = 200
         loactionManager.delegate = self
         loactionManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
         loactionManager.requestAlwaysAuthorization()
         loactionManager.startUpdatingLocation()
+        let textFieldCell = UINib(nibName: "CustomTableViewCell",
+                                  bundle: nil)
+        self.tableView.register(textFieldCell,
+                                forCellReuseIdentifier: "CustomTableViewCell")
     }
     
     //MARK: - CLLocationManager
@@ -72,12 +83,20 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate, Change
     func updateWeatherData(json: JSON){
         
         if let tempResult = json["main"]["temp"].double {
+            cityData.append(json["name"].stringValue)
+            tempData.append(Int(tempResult - 273.15))
+            humidityData.append(json["main"]["humidity"].intValue)
+            windData.append(json["wind"]["speed"].double ?? 0)
+            conditionData.append(json["weather"][0]["id"].intValue)
+            dateData.append(json["dt"].stringValue)
             WeatherData.shared.city.append(json["name"].stringValue)
             WeatherData.shared.temp.append(Int(tempResult - 273.15))
             WeatherData.shared.wind.append(json["wind"]["speed"].double ?? 0)
             WeatherData.shared.humidity.append(json["main"]["humidity"].intValue)
             WeatherData.shared.date.append(json["dt"].stringValue)
             WeatherData.shared.condition.append(json["weather"][0]["id"].intValue)
+            
+            
             
         } else {
             
@@ -99,23 +118,52 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate, Change
         print(city)
         let params: [String:String] = ["q": city , "appid": apiId]
         getWeatherData(url: apiUrl, params: params)
-        self.tableView.reloadData()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2){
+            self.tableView.reloadData()
+        }
     }
+    
+    
 }
 
 extension WeatherViewController : UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        1
+        WeatherData.shared.city.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let textFieldCell = UINib(nibName: "CustomTableViewCell",
-                                  bundle: nil)
-        self.tableView.register(textFieldCell,
-                                forCellReuseIdentifier: "CustomTableViewCell")
-        let cell = tableView.dequeueReusableCell(withIdentifier: "CustomTableViewCell", for: indexPath)
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: "CustomTableViewCell", for: indexPath) as? CustomTableViewCell else { return UITableViewCell() }
+        guard WeatherData.shared.city.count > 0 else { return cell}
+        cell.fillWeatherCell(cityData[indexPath.row],
+                             tempData[indexPath.row],
+                             humidityData[indexPath.row],
+                             windData[indexPath.row],
+                             conditionData[indexPath.row],
+                             dateData[indexPath.row])
         return cell
+    }
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+
+        if editingStyle == .delete {
+
+            // remove the item from the data model
+            cityData.remove(at: indexPath.row)
+            tempData.remove(at: indexPath.row)
+            humidityData.remove(at: indexPath.row)
+            windData.remove(at: indexPath.row)
+            conditionData.remove(at: indexPath.row)
+            dateData.remove(at: indexPath.row)
+            WeatherData.shared.city.remove(at: indexPath.row)
+            WeatherData.shared.temp.remove(at: indexPath.row)
+            WeatherData.shared.humidity.remove(at: indexPath.row)
+            WeatherData.shared.wind.remove(at: indexPath.row)
+            WeatherData.shared.condition.remove(at: indexPath.row)
+            WeatherData.shared.date.remove(at: indexPath.row)
+            // delete the table view row
+            tableView.deleteRows(at: [indexPath], with: .fade)
+
+        }
     }
 }
 
